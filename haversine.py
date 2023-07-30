@@ -15,29 +15,30 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     return R * c
 
 
-def get_compass_bearing(lat1, long1, lat2, long2):
-    long_diff = np.radians(long2 - long1)
-    lat1, lat2 = np.radians(lat1), np.radians(lat2)
-
-    x = np.sin(long_diff) * np.cos(lat2)
-    y = np.cos(lat1) * np.sin(lat2) - (np.sin(lat1) * np.cos(lat2) * np.cos(long_diff))
-
-    initial_bearing = np.arctan2(x, y)
-    initial_bearing = np.degrees(initial_bearing)
-
-    compass_bearing = (initial_bearing + 360) % 360
-    return compass_bearing
+def slerp(p0, p1, t):
+    """Spherical linear interpolation."""
+    p0 = np.array(p0)
+    p1 = np.array(p1)
+    omega = np.arccos(np.dot(p0/np.linalg.norm(p0), p1/np.linalg.norm(p1)))
+    so = np.sin(omega)
+    return np.sin((1.0-t)*omega) / so * p0 + np.sin(t*omega)/so * p1
 
 
-def get_destination_point(lat, lon, bearing, distance):
-    bearing = np.radians(bearing)  # converting bearing to radians
-    lat1 = np.radians(lat)  # Current lat point converted to radians
-    lon1 = np.radians(lon)  # Current long point converted to radians
+def interpolate_points(start, end, num_points):
+    return np.array([slerp(start, end, t) for t in np.linspace(0, 1, num_points)])
 
-    lat2 = np.arcsin(np.sin(lat1) * np.cos(distance/R) + np.cos(lat1) * np.sin(distance/R) * np.cos(bearing))
-    lon2 = lon1 + np.arctan2(np.sin(bearing) * np.sin(distance/R)* np.cos(lat1), np.cos(distance/R)- np.sin(lat1)* np.sin(lat2))
 
-    lat2 = np.degrees(lat2)
-    lon2 = np.degrees(lon2)
-    return lat2, lon2
+def lat_lon_to_cartesian(lat, lon):
+    lat, lon = np.radians([lat, lon])
+    x = R * np.cos(lat) * np.cos(lon)
+    y = R * np.cos(lat) * np.sin(lon)
+    z = R * np.sin(lat)
 
+    return np.array([x, y, z])
+
+
+def cartesian_to_lat_lon(x, y, z):
+    lon = np.arctan2(y, x)
+    lat = np.arcsin(z / R)
+
+    return np.degrees([lat, lon])

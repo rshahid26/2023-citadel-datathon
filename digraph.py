@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 from plot_graphs import plot_absolute, plot_relational, save_graph
-from haversine import haversine_distance
+from haversine import haversine_distance, lat_lon_to_cartesian, cartesian_to_lat_lon, interpolate_points
 
 
 def load_data():
@@ -51,6 +51,20 @@ def get_optimized_flights(G):
             optimized_flights.append((source, dest, haversine, traveled))
 
     return optimized_flights
+
+
+def get_flight_path(G, origin, destination, miles_apart: int = 10):
+    o_lat, o_lon = G.nodes[origin]['latitude'], G.nodes[origin]['longitude']
+    d_lat, d_lon = G.nodes[destination]['latitude'], G.nodes[destination]['longitude']
+
+    total_distance = haversine_distance(o_lat, o_lon, d_lat, d_lon)
+    num_points = int(total_distance / miles_apart)
+
+    start = lat_lon_to_cartesian(o_lat, o_lon)
+    end = lat_lon_to_cartesian(d_lat, d_lon)
+
+    path_points = interpolate_points(start, end, num_points)
+    return np.array([cartesian_to_lat_lon(x, y, z) for x, y, z in path_points])
 
 
 def mean_excess_travel(flight_edges):
@@ -100,6 +114,9 @@ def main():
 
     optimized_flights = get_optimized_flights(G)
     print_statistics(G, optimized_flights)
+
+    for source, destination, data in G.edges(data=True):
+        print(get_flight_path(G, source, destination))
 
 
 if __name__ == "__main__":
