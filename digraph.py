@@ -115,8 +115,8 @@ def main():
     optimized_flights = get_optimized_flights(G)
     print_statistics(G, optimized_flights)
 
-    for source, destination, data in G.edges(data=True):
-        print(get_flight_path(G, source, destination))
+    # for source, destination, data in G.edges(data=True):
+    #     print(get_flight_path(G, source, destination))
 
 
 if __name__ == "__main__":
