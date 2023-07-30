@@ -1,6 +1,6 @@
 import numpy as np
 
-R = 6371  # Radius of the Earth in kilometers
+R = 3958.8  # Earth radius
 
 
 def haversine_distance(lat1, lon1, lat2, lon2):
@@ -11,6 +11,7 @@ def haversine_distance(lat1, lon1, lat2, lon2):
 
     a = np.sin(delta_phi / 2)**2 + np.cos(phi1) * np.cos(phi2) * np.sin(delta_lambda / 2)**2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+
     return R * c
 
 

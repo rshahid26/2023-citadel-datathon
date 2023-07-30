@@ -1,8 +1,10 @@
 import pandas as pd
 import networkx as nx
+import numpy as np
 import os
 
 from plot_graphs import plot_absolute, plot_relational, save_graph
+from haversine import haversine_distance
 
 
 def load_data():
@@ -25,18 +27,79 @@ def create_graph(df_airports, df_flight_traffic):
         if origin in G and destination in G:
             G.add_edge(origin, destination,
                        airline=row['airline_id'],
-                       distance=row['distance'])
+                       traveled=row['distance'])
     return G
+
+
+def calculate_haversine_for_edges(G):
+    for origin, destination in G.edges():
+        o_lat, o_lon = G.nodes[origin]['latitude'], G.nodes[origin]['longitude']
+        d_lat, d_lon = G.nodes[destination]['latitude'], G.nodes[destination]['longitude']
+
+        haversine = haversine_distance(o_lat, o_lon, d_lat, d_lon)
+        G[origin][destination]['distance'] = haversine
+
+
+def get_optimized_flights(G):
+    optimized_flights = []
+
+    for source, dest in G.edges():
+        haversine = G[source][dest]['distance']
+        traveled = G[source][dest]['traveled']
+
+        if traveled > haversine:
+            optimized_flights.append((source, dest, haversine, traveled))
+
+    return optimized_flights
+
+
+def mean_excess_travel(flight_edges):
+    excess_travels = [flight[3] - flight[2] for flight in flight_edges]
+    return np.mean(excess_travels)
+
+
+def median_excess_travel(flight_edges):
+    excess_travels = [flight[3] - flight[2] for flight in flight_edges]
+    return np.median(excess_travels)
+
+
+def mean_percentage_excess_travel(flight_edges):
+    percentage_excess_travels = [(flight[3] - flight[2]) / flight[2] * 100 for flight in flight_edges]
+    return np.mean(percentage_excess_travels)
+
+
+def median_percentage_excess_travel(flight_edges):
+    percentage_excess_travels = [(flight[3] - flight[2]) / flight[2] * 100 for flight in flight_edges]
+    return np.median(percentage_excess_travels)
+
+
+def std_dev_excess_travel(flight_edges):
+    excess_travels = [flight[3] - flight[2] for flight in flight_edges]
+    return np.std(excess_travels)
+
+
+def print_statistics(G, flight_edges):
+    mean_excess = mean_excess_travel(flight_edges)
+    median_excess = median_excess_travel(flight_edges)
+    std_dev_excess = std_dev_excess_travel(flight_edges)
+    mean_percentage_excess = mean_percentage_excess_travel(flight_edges)
+    median_percentage_excess = median_percentage_excess_travel(flight_edges)
+
+    print(len(flight_edges), "of", len(G.edges()), "optimized.")
+    print("Mean Excess Travel:", mean_excess)
+    print("Median Excess Travel:", median_excess)
+    print("Standard Deviation of Excess Travel:", std_dev_excess)
+    print("Mean Percentage Excess Travel:", mean_percentage_excess, "%")
+    print("Median Percentage Excess Travel:", median_percentage_excess, "%")
 
 
 def main():
     df_airlines, df_airports, df_flight_traffic = load_data()
     G = create_graph(df_airports, df_flight_traffic)
+    calculate_haversine_for_edges(G)
 
-    print(G.nodes())
-    print(G.edges())
-
-    plot_relational(G)
+    optimized_flights = get_optimized_flights(G)
+    print_statistics(G, optimized_flights)
 
 
 if __name__ == "__main__":
