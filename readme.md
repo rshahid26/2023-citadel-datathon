@@ -1,1 +1,1 @@
-save flight_traffic.csv to ./datasets as it is too heavy to save on github
+clone the repo and save flight_traffic.csv to ./datasets to run. Ask me for the file/write-up if interested
